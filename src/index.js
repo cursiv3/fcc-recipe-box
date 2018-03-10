@@ -22,7 +22,8 @@ class App extends React.Component {
         }
       ],
       isModalActive: false,
-      modalItemId: null
+      modalItemId: null,
+      modalType: null
     };
     this.modalControl = this.modalControl.bind(this);
     this.showIngredients = this.showIngredients.bind(this);
@@ -50,9 +51,13 @@ class App extends React.Component {
 
   saveEditToState(newState, id) {
     let newRecipes = this.state.recipes;
-    newRecipes[id].name = newState.name;
-    newRecipes[id].ingredients = newState.ingredients;
-    this.setState(Object.assign({}, this.state, newRecipes));
+    if (id === null) {
+      this.setState(Object.assign({}, this.state, newRecipes.push(newState)));
+    } else {
+      newRecipes[id].name = newState.name;
+      newRecipes[id].ingredients = newState.ingredients;
+      this.setState(Object.assign({}, this.state, newRecipes));
+    }
     this.modalControl(id);
   }
 
@@ -79,7 +84,7 @@ class App extends React.Component {
             />
           )}
         </div>
-        <button>Add Recipe</button>
+        <button onClick={evt => this.modalControl(null)}>Add Recipe</button>
       </div>
     );
   }
@@ -111,7 +116,9 @@ const Recipe = props => {
   return (
     <div className="recipe-detail-container">
       {ingredientsArr.map((val, idx) => <div key={idx}>{val}</div>)}
-      <button onClick={evt => props.modalControl(props.id)}>Edit Recipe</button>
+      <button onClick={evt => props.modalControl(props.id, "edit")}>
+        Edit Recipe
+      </button>
       <button>Delete This Recipe</button>
     </div>
   );
@@ -121,9 +128,14 @@ class Modal extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      name: this.props.state.recipes[this.props.state.modalItemId].name,
-      ingredients: this.props.state.recipes[this.props.state.modalItemId]
-        .ingredients
+      name:
+        this.props.state.modalItemId === null
+          ? ""
+          : this.props.state.recipes[this.props.state.modalItemId].name,
+      ingredients:
+        this.props.state.modalItemId === null
+          ? ""
+          : this.props.state.recipes[this.props.state.modalItemId].ingredients
     };
     this.onChange = this.onChange.bind(this);
   }
