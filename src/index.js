@@ -9,13 +9,13 @@ class App extends React.Component {
     this.state = {
       recipes: [
         {
-          id: 0,
+          id: 1,
           name: "cake",
           ingredients: "milk, eggs, flour",
           show: false
         },
         {
-          id: 1,
+          id: 2,
           name: "chili mac",
           ingredients: "chili, mac n cheese",
           show: false
@@ -28,14 +28,17 @@ class App extends React.Component {
     this.modalControl = this.modalControl.bind(this);
     this.showIngredients = this.showIngredients.bind(this);
     this.saveEditToState = this.saveEditToState.bind(this);
+    this.deleteRecipe = this.deleteRecipe.bind(this);
   }
 
-  showIngredients(evt) {
-    let target = this.state.recipes[evt.target.id];
-    let newRecipes = this.state.recipes;
+  showIngredients(id) {
+    console.log(id);
+    let newRecipesList = this.state.recipes;
+    let target = this.state.recipes.filter(entry => entry.id === id)[0];
     target.show === false ? (target.show = true) : (target.show = false);
-    newRecipes[evt.target.id] = target;
-    this.setState(Object.assign({}, this.state, { recipes: newRecipes }));
+    let idx = this.state.recipes.map(val => val.id).indexOf(id);
+    newRecipesList[idx] = target;
+    this.setState(Object.assign({}, this.state, { recipes: newRecipesList }));
   }
 
   modalControl(id) {
@@ -61,30 +64,46 @@ class App extends React.Component {
     this.modalControl(id);
   }
 
+  deleteRecipe(id) {
+    let newRecipes = this.state.recipes;
+    let filteredRecipes = newRecipes.filter(entry => entry.id !== id);
+    this.setState(Object.assign({}, this.state, { recipes: filteredRecipes }));
+  }
+
   render() {
     let modalShow = this.state.isModalActive;
     return (
       <div className="container">
         {modalShow && <div className="modal-transparent-background" />}
-        <div className="list-wrapper">
-          {this.state.recipes.map((val, idx) => (
-            <RecipeListItem
-              mapVal={val}
-              mapIdx={idx}
-              modalControl={this.modalControl}
-              showIngredients={this.showIngredients}
-            />
-          ))}
-          {modalShow && (
-            <Modal
-              modalControl={this.modalControl}
-              onChange={this.onChange}
-              saveEditToState={this.saveEditToState}
-              state={this.state}
-            />
-          )}
+        {modalShow && (
+          <Modal
+            modalControl={this.modalControl}
+            onChange={this.onChange}
+            saveEditToState={this.saveEditToState}
+            state={this.state}
+          />
+        )}
+
+        <div className="list-border-container">
+          <div className="list-wrapper">
+            {this.state.recipes.map(val => (
+              <RecipeListItem
+                mapVal={val}
+                id={val.id}
+                modalControl={this.modalControl}
+                showIngredients={this.showIngredients}
+                deleteRecipe={this.deleteRecipe}
+              />
+            ))}
+          </div>
+
+          <button
+            className="add-recipe-btn"
+            onClick={evt => this.modalControl(null)}
+          >
+            Add Recipe
+          </button>
         </div>
-        <button onClick={evt => this.modalControl(null)}>Add Recipe</button>
       </div>
     );
   }
@@ -93,20 +112,23 @@ class App extends React.Component {
 const RecipeListItem = props => {
   return (
     <div className="recipe-row-item">
-      <div
-        id={props.mapIdx}
-        key={props.mapIdx}
-        onClick={evt => props.showIngredients(evt)}
-      >
-        {props.mapVal.name}
+      <div key={props.id} onClick={evt => props.showIngredients(props.id)}>
+        <h3 className="recipe-name-text" id={props.id}>
+          {props.mapVal.name}
+        </h3>
+        <p className="recipe-name-dropdown" id={props.id}>
+          &#9660;
+        </p>
       </div>
       {props.mapVal.show && (
         <Recipe
-          id={props.mapIdx}
+          id={props.id}
           ingredients={props.mapVal.ingredients}
           modalControl={props.modalControl}
+          deleteRecipe={props.deleteRecipe}
         />
       )}
+      <hr />
     </div>
   );
 };
@@ -115,11 +137,11 @@ const Recipe = props => {
   let ingredientsArr = props.ingredients.split(",");
   return (
     <div className="recipe-detail-container">
-      {ingredientsArr.map((val, idx) => <div key={idx}>{val}</div>)}
-      <button onClick={evt => props.modalControl(props.id, "edit")}>
-        Edit Recipe
+      {ingredientsArr.map((val, idx) => <li key={idx}>{val}</li>)}
+      <button onClick={evt => props.modalControl(props.id)}>Edit Recipe</button>
+      <button onClick={evt => props.deleteRecipe(props.id)}>
+        Delete This Recipe
       </button>
-      <button>Delete This Recipe</button>
     </div>
   );
 };
@@ -142,7 +164,7 @@ class Modal extends React.Component {
 
   onChange(evt) {
     let field = evt.target.name;
-    let newState = {};
+    let newState = { id: this.props.state.recipes.length + 1 };
     newState[field] = evt.target.value;
     this.setState(Object.assign({}, this.state, newState));
   }
